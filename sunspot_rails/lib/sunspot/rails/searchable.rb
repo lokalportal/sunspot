@@ -102,11 +102,11 @@ module Sunspot #:nodoc:
               # Only add the on filter if the callback supports it
               if Sunspot::Rails.configuration.auto_remove_callback =~ /save|destroy|create/
                 __send__ Sunspot::Rails.configuration.auto_remove_callback,
-                        proc { |searchable| searchable.remove_from_index }
+                         :remove_from_index!
               else
                 __send__ Sunspot::Rails.configuration.auto_remove_callback,
-                        proc { |searchable| searchable.remove_from_index },
-                        :on => :destroy
+                         :remove_from_index!,
+                         on: :destroy
               end
             end
             options[:include] = Util::Array(options[:include])
@@ -530,15 +530,17 @@ module Sunspot #:nodoc:
           end
         end
 
-        def mark_for_auto_indexing_or_removal
+        def mark_for_auto_indexing_or_removal(force: false)
           if indexable?
             # :if/:unless constraints pass or were not present
 
             @marked_for_auto_indexing =
-              if !new_record? && ignore_attributes = self.class.sunspot_options[:ignore_attribute_changes_of]
-                !(changed.map { |attr| attr.to_sym } - ignore_attributes).blank?
+              if force
+                true
+              elsif !new_record? && ignore_attributes = self.class.sunspot_options[:ignore_attribute_changes_of]
+                (changes_to_save.keys.map(&:to_sym) - ignore_attributes).present?
               elsif !new_record? && only_attributes = self.class.sunspot_options[:only_reindex_attribute_changes_of]
-                !(changed.map { |attr| attr.to_sym } & only_attributes).blank?
+                (changes_to_save.keys.map(&:to_sym) & only_attributes).present?
               else
                 true
               end
@@ -556,7 +558,9 @@ module Sunspot #:nodoc:
 
         def perform_index_tasks
           if @marked_for_auto_indexing
-            solr_index
+            # Test if the record actually still exists in the database.
+            # It might have happened that updates and deletions occurred inside the same transaction!
+            solr_index if new_record? || self.class.exists?(id)
             remove_instance_variable(:@marked_for_auto_indexing)
           elsif @marked_for_auto_removal
             solr_remove_from_index

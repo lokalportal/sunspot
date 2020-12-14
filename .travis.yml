@@ -11,8 +11,6 @@ rvm:
   - 2.5.3
   - 2.6.3
   - ruby-head
-  # - rbx-2.0
-  # - jruby
 
 jdk:
   - openjdk8

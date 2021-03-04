@@ -37,6 +37,9 @@ module Sunspot
           indexing do
             default_batch_size 50
           end
+          highlights do
+            custom_name_suffixes []
+          end
         end
       end
 

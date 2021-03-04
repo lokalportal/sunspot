@@ -46,7 +46,7 @@ module Sunspot
       #
       def highlights(field_name = nil)
         if field_name.nil?
-          highlights_cache.values.flatten 
+          highlights_cache.values.flatten
         else
           highlights_cache[field_name.to_sym]
         end || []
@@ -125,12 +125,18 @@ module Sunspot
         @highlights_cache ||=
           begin
             cache = {}
-            if @highlights
-              @highlights.each_pair do |indexed_field_name, highlight_strings|
-                field_name = indexed_field_name.sub(/_[a-z]+$/, '').to_sym
-                cache[field_name] = highlight_strings.map do |highlight_string|
-                  Highlight.new(field_name, highlight_string)
-                end
+            @highlights&.each_pair do |indexed_field_name, highlight_strings|
+              custom_suffix = Array(Sunspot.config.highlights.custom_name_suffixes)
+                                .find { |suffix| indexed_field_name.match?(/#{suffix}$/) }
+
+              field_name = if custom_suffix
+                             indexed_field_name.sub(custom_suffix, '')
+                           else
+                             indexed_field_name.sub(/_[a-z]+$/, '').to_sym
+                           end
+
+              cache[field_name.to_sym] = highlight_strings.map do |highlight_string|
+                Highlight.new(field_name, highlight_string)
               end
             end
             cache

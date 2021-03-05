@@ -2,8 +2,8 @@ ruby_version = Gem::Version.new(RUBY_VERSION)
 
 ['5.1.0', '5.2.0'].each do |rails_version|
   appraise "rails-#{rails_version}" do
-    gem 'sunspot', path: File.expand_path('sunspot', ENV['SUNSPOT_LIB_HOME'])
-    gem 'sunspot_solr', path: File.expand_path('sunspot_solr', ENV['SUNSPOT_LIB_HOME'])
+    gem 'sunspot', path: "../sunspot"
+    gem 'sunspot_solr', path: "../sunspot_solr"
     gem 'rails', "~> #{rails_version}"
     gem 'sprockets', '~> 3.0'
     gem 'progress_bar', '~> 1.0.5', require: false
